@@ -1,0 +1,26 @@
+# Virtualenvs / caches
+.venv/
+__pycache__/
+*.pyc
+.ruff_cache/
+.mypy_cache/
+.pytest_cache/
+
+# Build artefacts
+build/
+dist/
+*.egg-info/
+
+# Sphinx
+docs/_build/
+docs/_autosummary/
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Generated benchmark output
+benchmark/
+benchmark_demo/
