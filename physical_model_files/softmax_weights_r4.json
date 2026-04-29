@@ -1,0 +1,37 @@
+{
+  "region_tag": "r4",
+  "region_name": "Region 4 \u2014 IODP Expedition 323, Bering Sea",
+  "metric_names": [
+    "jsd",
+    "wasserstein",
+    "frobenius",
+    "acf"
+  ],
+  "logits": {
+    "jsd": -0.7714808212492463,
+    "wasserstein": -0.8782557088725871,
+    "frobenius": 0.9342856714776554,
+    "acf": -0.9673739936541601
+  },
+  "softmax_weights": {
+    "jsd": 0.1215593821275419,
+    "wasserstein": 0.10924881612716492,
+    "frobenius": 0.669257827260581,
+    "acf": 0.09993397448471222
+  },
+  "per_metric_values": {
+    "jsd": 0.47120215652705844,
+    "wasserstein": 1.505873076328366,
+    "frobenius": 1.5572601249634281,
+    "acf": 0.44623472048571555
+  },
+  "weighted_contributions": {
+    "jsd": 0.05727904300459451,
+    "wasserstein": 0.16451485082664585,
+    "frobenius": 1.0422085277125648,
+    "acf": 0.04459400917121219
+  },
+  "best_loss": 0.6734365628184519,
+  "best_trial": 476,
+  "n_trials": 500
+}

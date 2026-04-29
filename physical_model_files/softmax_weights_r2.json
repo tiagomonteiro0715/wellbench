@@ -1,0 +1,37 @@
+{
+  "region_tag": "r2",
+  "region_name": "Region 2 \u2014 Pindori, Eastern Potwar Basin, Pakistan",
+  "metric_names": [
+    "jsd",
+    "wasserstein",
+    "frobenius",
+    "acf"
+  ],
+  "logits": {
+    "jsd": 0.8331355744414506,
+    "wasserstein": 0.2091621753924204,
+    "frobenius": -0.473009320798551,
+    "acf": 0.39319123933927325
+  },
+  "softmax_weights": {
+    "jsd": 0.4080390663042018,
+    "wasserstein": 0.21863190607452218,
+    "frobenius": 0.11052237899852495,
+    "acf": 0.26280664862275116
+  },
+  "per_metric_values": {
+    "jsd": 0.2832014524451436,
+    "wasserstein": 0.5883489775062289,
+    "frobenius": 4.394602385477208,
+    "acf": 0.10773986158823848
+  },
+  "weighted_contributions": {
+    "jsd": 0.1155572562317102,
+    "wasserstein": 0.128631858389183,
+    "frobenius": 0.48570191039553384,
+    "acf": 0.028314751947084035
+  },
+  "best_loss": 0.5760421011369667,
+  "best_trial": 407,
+  "n_trials": 500
+}

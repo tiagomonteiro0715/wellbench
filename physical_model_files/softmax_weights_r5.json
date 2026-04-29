@@ -1,0 +1,37 @@
+{
+  "region_tag": "r5",
+  "region_name": "Region 5 \u2014 Volve Oil Well, North Sea",
+  "metric_names": [
+    "jsd",
+    "wasserstein",
+    "frobenius",
+    "acf"
+  ],
+  "logits": {
+    "jsd": 0.327532157094772,
+    "wasserstein": 0.934666762379945,
+    "frobenius": 0.9579948882353814,
+    "acf": -0.8146484316514517
+  },
+  "softmax_weights": {
+    "jsd": 0.19869783841900926,
+    "wasserstein": 0.3646433950586743,
+    "frobenius": 0.37324983786170984,
+    "acf": 0.06340892866060657
+  },
+  "per_metric_values": {
+    "jsd": 0.2298710328895234,
+    "wasserstein": 0.3410342829725157,
+    "frobenius": 1.227792857068715,
+    "acf": 0.5578909800018701
+  },
+  "weighted_contributions": {
+    "jsd": 0.04567487735029328,
+    "wasserstein": 0.12435589877449878,
+    "frobenius": 0.4582734848286634,
+    "acf": 0.03537526935133447
+  },
+  "best_loss": 0.49877823066033466,
+  "best_trial": 353,
+  "n_trials": 500
+}

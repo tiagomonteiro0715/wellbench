@@ -1,0 +1,37 @@
+{
+  "region_tag": "r1",
+  "region_name": "Region 1 \u2014 Missa Keswal, Eastern Potwar Basin, Pakistan",
+  "metric_names": [
+    "jsd",
+    "wasserstein",
+    "frobenius",
+    "acf"
+  ],
+  "logits": {
+    "jsd": -0.8697778985516196,
+    "wasserstein": -0.9652024795489427,
+    "frobenius": -0.8982257625756882,
+    "acf": 0.585392944075905
+  },
+  "softmax_weights": {
+    "jsd": 0.1395448391540028,
+    "wasserstein": 0.12684443270095258,
+    "frobenius": 0.1356310203813129,
+    "acf": 0.5979797077637318
+  },
+  "per_metric_values": {
+    "jsd": 0.37358240836150564,
+    "wasserstein": 1.4703514015412251,
+    "frobenius": 2.231371460608187,
+    "acf": 0.07300120857603572
+  },
+  "weighted_contributions": {
+    "jsd": 0.05213149708557129,
+    "wasserstein": 0.18650588939954724,
+    "frobenius": 0.3026431880520289,
+    "acf": 0.043653241370697066
+  },
+  "best_loss": 0.5423483960686242,
+  "best_trial": 498,
+  "n_trials": 500
+}

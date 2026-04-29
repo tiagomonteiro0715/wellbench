@@ -1,0 +1,37 @@
+{
+  "region_tag": "r3",
+  "region_name": "Region 3 \u2014 Joyamair/Minwal, Eastern Potwar Basin, Pakistan",
+  "metric_names": [
+    "jsd",
+    "wasserstein",
+    "frobenius",
+    "acf"
+  ],
+  "logits": {
+    "jsd": -0.32507677918100186,
+    "wasserstein": 0.9410965764766308,
+    "frobenius": -0.7184757706761731,
+    "acf": 0.8317773979541646
+  },
+  "softmax_weights": {
+    "jsd": 0.11902032891603519,
+    "wasserstein": 0.42219515739045216,
+    "frobenius": 0.08031009412764614,
+    "acf": 0.37847441956586647
+  },
+  "per_metric_values": {
+    "jsd": 0.31420069153283353,
+    "wasserstein": 0.5107509706872237,
+    "frobenius": 3.2401669094593197,
+    "acf": 0.10811442430313964
+  },
+  "weighted_contributions": {
+    "jsd": 0.03739626965188356,
+    "wasserstein": 0.21563658645661865,
+    "frobenius": 0.26021810948796226,
+    "acf": 0.04091854398482858
+  },
+  "best_loss": 0.5167880213139927,
+  "best_trial": 321,
+  "n_trials": 500
+}

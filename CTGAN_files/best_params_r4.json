@@ -1,0 +1,7 @@
+{
+  "embedding_dim": 256,
+  "generator_dim": "128,128",
+  "lr": 0.00012854415975274456,
+  "batch_size": 500,
+  "epochs": 500
+}
