@@ -1,5 +1,7 @@
 # wellbench
 
+Benchmark data: https://huggingface.co/datasets/monteirot/wellbench/tree/main
+
 **Physics-based synthetic well-log benchmark generator for pore-pressure
 prediction research.** Five regions calibrated against real-world wells via
 Optuna optimisation (Jensen–Shannon divergence + Wasserstein distance against
