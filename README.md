@@ -2,6 +2,18 @@
 
 Benchmark data: https://huggingface.co/datasets/monteirot/wellbench/tree/main
 
+
+import mlcroissant as mlc
+import pandas as pd
+
+ds = mlc.Dataset("croissant.json")
+df = pd.DataFrame(ds.records(record_set="physics-samples"))
+
+train = df[df.well == "MISSA-KESWAL-01"]
+val   = df[df.well == "MISSA-KESWAL-02"]
+test  = df[df.well == "MISSA-KESWAL-03"]
+
+
 **Physics-based synthetic well-log benchmark generator for pore-pressure
 prediction research.** Five regions calibrated against real-world wells via
 Optuna optimisation (Jensen–Shannon divergence + Wasserstein distance against
