@@ -12,6 +12,9 @@
 
 `wellbench` is a small Python package and a research codebase for generating reproducible, physically plausible synthetic well-log data. It ships **two interchangeable generators** — a deterministic physics forward-model and a CTGAN tabular baseline — both behind the same `gen.generate(seed, depth=...)` interface, plus **five regional calibrations** tuned with Optuna against real wells (Eastern Potwar Basin, Bering Sea, Volve / North Sea), a **CLI** that emits a canonical 5-regions × 3-seeds = 15-CSV benchmark, and a separate **research subdirectory** that reproduces the calibration, training, and TRTR/TSTR evaluation pipelines locally (no Colab).
 
+Benchmark: https://huggingface.co/datasets/monteirot/wellbench
+
+
 ---
 
 ## Contents
