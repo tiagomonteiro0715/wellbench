@@ -1,0 +1,57 @@
+[project]
+name = "well-log-synthesis"
+version = "0.1.0"
+description = "Physics- and GAN-based synthetic well-log generation, plus TRTR / TSTR ML benchmarks."
+readme = "README.md"
+requires-python = ">=3.10,<3.13"
+
+dependencies = [
+    # core scientific stack
+    "numpy>=1.26",
+    "pandas>=2.1",
+    "scipy>=1.11",
+    "scikit-learn>=1.4",
+    "matplotlib>=3.8",
+    "seaborn>=0.13",
+    "tqdm>=4.66",
+    "psutil>=5.9",
+
+    # data IO
+    "openpyxl>=3.1",
+    "xlrd>=2.0",
+    "polars>=0.20",
+    "fastexcel>=0.10",
+    "gdown>=5.1",
+
+    # deep learning
+    "torch>=2.2",
+    "pytorch-lightning>=2.2",
+
+    # gradient boosting
+    "xgboost>=2.0",
+    "lightgbm>=4.3",
+    "catboost>=1.2",
+
+    # hyper-parameter search
+    "optuna>=3.5",
+
+    # synthetic-data benchmarks
+    "sdmetrics>=0.14",
+    "ctgan>=0.10",
+
+    # extras used by the physics pipeline
+    "dcor>=0.6",
+    "kaleido==0.2.1",
+    "pydrive2>=1.19",
+
+    # notebooks
+    "jupyter>=1.0",
+    "ipykernel>=6.29",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["scripts"]
