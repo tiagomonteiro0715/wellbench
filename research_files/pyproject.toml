@@ -24,7 +24,7 @@ dependencies = [
     "gdown>=5.1",
 
     # deep learning
-    "torch>=2.2",
+    "torch>=2.13.0",
     "pytorch-lightning>=2.2",
 
     # gradient boosting
