@@ -30,6 +30,8 @@ from wellbench import (
     PHYSICAL_BOUNDS,
     REGION_1,
     REGION_4,
+    SMOTEGenerator,
+    SmoothedBootstrapGenerator,
     SyntheticWellLogGenerator,
     clean_well_data,
     generate_benchmark,
@@ -145,7 +147,27 @@ def example_ctgan() -> pd.DataFrame | None:
 
 
 # ---------------------------------------------------------------------------
-# 8. Aligning synthetic depth to a real well's depth column (recipe)
+# 8. Resampling baselines — SMOTE and smoothed bootstrap
+# ---------------------------------------------------------------------------
+def example_resampling() -> pd.DataFrame:
+    """Draw from a source frame with the two non-parametric baselines.
+
+    Both need a source to resample. Here a physics-generated frame stands in
+    for real wells so the example is self-contained.
+    """
+    source = SyntheticWellLogGenerator(REGION_1).generate(seed=0)
+
+    smote = SMOTEGenerator(REGION_1, source).generate(seed=42)
+    boot = SmoothedBootstrapGenerator(REGION_1, source).generate(seed=42)
+
+    print(f"  source     GR mean {source.GR.mean():7.2f}  ({len(source)} rows)")
+    print(f"  SMOTE      GR mean {smote.GR.mean():7.2f}  ({len(smote)} rows)")
+    print(f"  bootstrap  GR mean {boot.GR.mean():7.2f}  ({len(boot)} rows)")
+    return smote
+
+
+# ---------------------------------------------------------------------------
+# 9. Aligning synthetic depth to a real well's depth column (recipe)
 # ---------------------------------------------------------------------------
 def example_align_to_real(real_csv: str | Path) -> pd.DataFrame:
     """Read a real well's DEPTH column and emit a depth-aligned synthetic well.
@@ -177,6 +199,7 @@ EXAMPLES = {
     "bounds": example_show_bounds,
     "benchmark": example_benchmark,
     "ctgan": example_ctgan,
+    "resampling": example_resampling,
 }
 
 

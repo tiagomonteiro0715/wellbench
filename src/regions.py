@@ -35,6 +35,9 @@ REGION_1 = {
     "nct_smooth_window": 932,
     "nct_weight_smooth": 0.768870148684051,
     "eaton_n": 0.9809892414624948,
+    "smote_k_neighbors": 3,
+    "bootstrap_bandwidth": 0.05008697319710709,
+    "bootstrap_noise_correlation": 0.17120775190632576,
     "has_pore_pressure": True,
 }
 
@@ -75,6 +78,9 @@ REGION_2 = {
     "nct_smooth_window": 64,
     "nct_weight_smooth": 0.9390911572943382,
     "eaton_n": 3.731992032993206,
+    "smote_k_neighbors": 3,
+    "bootstrap_bandwidth": 0.05006140370129639,
+    "bootstrap_noise_correlation": 0.44738558892254293,
     "has_pore_pressure": True,
 }
 
@@ -115,6 +121,9 @@ REGION_3 = {
     "nct_smooth_window": 1494,
     "nct_weight_smooth": 0.9205264320426211,
     "eaton_n": 1.3683550348643074,
+    "smote_k_neighbors": 3,
+    "bootstrap_bandwidth": 0.0716315956651039,
+    "bootstrap_noise_correlation": 0.2762073840548665,
     "has_pore_pressure": True,
 }
 
@@ -146,6 +155,9 @@ REGION_4 = {
     "gr_clean": 55.23963052298657,
     "gr_shale": 99.72690746947566,
     "gr_noise_std": 19.07410576165951,
+    "smote_k_neighbors": 3,
+    "bootstrap_bandwidth": 0.05022848159228473,
+    "bootstrap_noise_correlation": 0.36720125105420964,
     "has_pore_pressure": False,
 }
 
@@ -177,6 +189,9 @@ REGION_5 = {
     "gr_clean": 78.20032424453143,
     "gr_shale": 50.340121341835314,
     "gr_noise_std": 33.462922624263946,
+    "smote_k_neighbors": 3,
+    "bootstrap_bandwidth": 0.05084917013574988,
+    "bootstrap_noise_correlation": 0.5285207604085924,
     "has_pore_pressure": False,
 }
 

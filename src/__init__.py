@@ -9,6 +9,10 @@ from .ctgan_generator import (
     CTGANSyntheticWellLogGenerator,
     load_ctgan_generator,
 )
+from .resample_generator import (
+    SMOTEGenerator,
+    SmoothedBootstrapGenerator,
+)
 from .regions import (
     ALL_REGIONS,
     BENCHMARK_SEEDS,
@@ -23,6 +27,8 @@ __all__ = [
     "SyntheticWellLogGenerator",
     "CTGANSyntheticWellLogGenerator",
     "load_ctgan_generator",
+    "SMOTEGenerator",
+    "SmoothedBootstrapGenerator",
     "PHYSICAL_BOUNDS",
     "SENTINEL_VALUES",
     "clean_well_data",

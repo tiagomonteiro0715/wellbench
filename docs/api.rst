@@ -25,6 +25,14 @@ CTGAN generator
    :undoc-members:
    :show-inheritance:
 
+Resampling generators
+---------------------
+
+.. automodule:: wellbench.resample_generator
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 Benchmark
 ---------
 

@@ -10,7 +10,7 @@
   <img alt="Status" src="https://img.shields.io/badge/status-beta-orange">
 </p>
 
-`wellbench` is a small Python package and a research codebase for generating reproducible, physically plausible synthetic well-log data. It ships **two interchangeable generators** — a deterministic physics forward-model and a CTGAN tabular baseline — both behind the same `gen.generate(seed, depth=...)` interface, plus **five regional calibrations** tuned with Optuna against real wells (Eastern Potwar Basin, Bering Sea, Volve / North Sea), a **CLI** that emits a canonical 5-regions × 3-seeds = 15-CSV benchmark, and a separate **research subdirectory** that reproduces the calibration, training, and TRTR/TSTR evaluation pipelines locally (no Colab).
+`wellbench` is a small Python package and a research codebase for generating reproducible, physically plausible synthetic well-log data. It ships **four interchangeable generators** — a deterministic physics forward-model, a CTGAN tabular baseline, and SMOTE and smoothed-bootstrap resampling baselines — all behind the same `gen.generate(seed, depth=...)` interface, plus **five regional calibrations** tuned with Optuna against real wells (Eastern Potwar Basin, Bering Sea, Volve / North Sea), a **CLI** that emits a canonical 5-regions × 3-seeds = 15-CSV benchmark, and a separate **research subdirectory** that reproduces the calibration, training, and TRTR/TSTR evaluation pipelines locally (no Colab).
 
 Benchmark: https://huggingface.co/datasets/monteirot/wellbench
 
@@ -27,6 +27,7 @@ Benchmark: https://huggingface.co/datasets/monteirot/wellbench
 - [Output schema](#output-schema)
 - [Physics models](#physics-models)
 - [CTGAN baseline](#ctgan-baseline)
+- [Resampling baselines](#resampling-baselines)
 - [Cleaning real or synthetic data](#cleaning-real-or-synthetic-data)
 - [Defining a custom region](#defining-a-custom-region)
 - [Research code (`research_files/`)](#research-code-research_files)
@@ -47,6 +48,7 @@ Benchmark: https://huggingface.co/datasets/monteirot/wellbench
 |---------------------------------|------------------------------------|------------------------------------------------------------------------------------|
 | Physics generator               | `src/generator.py`                 | Deterministic forward model (Athy + Wyllie + Archie + Eaton).                      |
 | CTGAN generator                 | `src/ctgan_generator.py`           | Optional GAN baseline with the same `.generate()` API.                             |
+| Resampling generators           | `src/resample_generator.py`        | SMOTE and smoothed-bootstrap baselines with the same `.generate()` API.            |
 | Five region calibrations        | `src/regions.py`                   | `REGION_1` … `REGION_5` parameter dicts, plus `ALL_REGIONS` and `BENCHMARK_SEEDS`. |
 | Benchmark builder               | `src/benchmark.py`                 | `generate_benchmark(...)` → 15 CSVs (5 regions × 3 seeds).                         |
 | CLI                             | `src/cli.py`                       | `wellbench` console script wrapping the benchmark builder.                         |
@@ -210,6 +212,40 @@ CTGAN samples are i.i.d. tabular rows; `wellbench` orders them along the depth a
 
 ---
 
+## Resampling baselines
+
+Two cheap non-parametric baselines round out the generator set. Both are
+*resampling* methods, so unlike the physics and CTGAN generators they take a
+source DataFrame to draw from — real cleaned wells for the research protocol, or
+any frame with a `DEPTH` column plus log columns:
+
+```python
+from wellbench import REGION_1, SMOTEGenerator, SmoothedBootstrapGenerator
+
+real = clean_well_data(pd.read_csv("real_well.csv"))
+
+SMOTEGenerator(REGION_1, real).generate(seed=42)              # k-NN interpolation
+SmoothedBootstrapGenerator(REGION_1, real).generate(seed=42)  # resample + jitter
+```
+
+- **`SMOTEGenerator`** picks a random source row, picks one of its
+  `smote_k_neighbors` nearest neighbours, and interpolates between them by a
+  uniform random factor. Neighbours are found on raw (unscaled) log values, so
+  the widest-range columns dominate the distance.
+- **`SmoothedBootstrapGenerator`** resamples rows with replacement and adds
+  Gaussian jitter scaled by `bootstrap_bandwidth × std(column)`. The jitter is
+  shared across logs by `bootstrap_noise_correlation`: any two columns get a
+  jitter correlation of exactly `w`, while each column stays at unit variance.
+
+All three per-region hyperparameters (`smote_k_neighbors`,
+`bootstrap_bandwidth`, `bootstrap_noise_correlation`) are Optuna-calibrated and
+live in the region dicts alongside the physics parameters.
+
+Both baselines match real *marginals* very closely but weaken vertical
+structure — resampled rows are drawn i.i.d., so autocorrelation length collapses
+relative to the physics generator. Use them as a fidelity floor, not as a
+substitute for depth-correlated logs.
+
 ## Cleaning real or synthetic data
 
 `clean_well_data` applies the same physical-bounds and outlier rules to any DataFrame with a `DEPTH` column plus log columns:
@@ -301,7 +337,8 @@ wellbench/
 │   ├── ctgan_generator.py        # CTGANSyntheticWellLogGenerator, load_ctgan_generator
 │   ├── ctgan_models/             # bundled CTGAN checkpoints (ctgan_r1.pkl, ...)
 │   ├── generator.py              # SyntheticWellLogGenerator, PHYSICAL_BOUNDS, clean_well_data
-│   └── regions.py                # REGION_1 … REGION_5, ALL_REGIONS, BENCHMARK_SEEDS
+│   ├── regions.py                # REGION_1 … REGION_5, ALL_REGIONS, BENCHMARK_SEEDS
+│   └── resample_generator.py     # SMOTEGenerator, SmoothedBootstrapGenerator
 ├── CTGAN_files/                  # CTGAN checkpoints + best Optuna params
 ├── physical_model_files/         # physics best params + softmax weights
 ├── docs/                         # Sphinx + autodoc + Napoleon
@@ -329,6 +366,10 @@ from wellbench import (
     CTGANSyntheticWellLogGenerator,
     load_ctgan_generator,
 
+    # Resampling generators (need a source DataFrame)
+    SMOTEGenerator,
+    SmoothedBootstrapGenerator,
+
     # Benchmark
     generate_benchmark,
 
@@ -338,7 +379,7 @@ from wellbench import (
 )
 ```
 
-Both generators expose the same surface:
+All four generators expose the same surface:
 
 ```python
 gen.generate(seed: int, depth: np.ndarray | None = None) -> pandas.DataFrame
