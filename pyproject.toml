@@ -41,6 +41,9 @@ ctgan = [
     "ctgan>=0.10",
     "torch>=2.0",
 ]
+data = [
+    "openpyxl>=3.1",   # read original_data/ and write synthetic/ .xlsx wells (main.py)
+]
 docs = [
     "sphinx>=7",
     "furo>=2024.1",
@@ -66,5 +69,6 @@ include = [
     "README.md",
     "LICENSE",
     "examples.py",
+    "main.py",
     "docs",
 ]

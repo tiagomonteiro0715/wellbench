@@ -5,7 +5,6 @@ from __future__ import annotations
 import importlib
 import importlib.util
 import sys
-import types
 from datetime import date
 from importlib import metadata
 from pathlib import Path
@@ -15,39 +14,15 @@ def _bootstrap_wellbench() -> None:
     """Make ``import wellbench`` work for autodoc.
 
     Prefers the installed package (e.g. ``pip install -e .``). If it isn't
-    installed, fall back to loading the modules directly from ``../src/`` and
-    registering them under the ``wellbench`` namespace.
+    installed, fall back to adding ``../src`` to ``sys.path`` so the
+    ``wellbench`` package there is importable.
     """
     if importlib.util.find_spec("wellbench") is not None:
         return
 
     src = Path(__file__).resolve().parent.parent / "src"
-    if not src.is_dir():
-        return
-
-    pkg = types.ModuleType("wellbench")
-    pkg.__path__ = [str(src)]
-    sys.modules["wellbench"] = pkg
-
-    for module_path in src.glob("*.py"):
-        name = module_path.stem
-        if name.startswith("_"):
-            continue
-        spec = importlib.util.spec_from_file_location(
-            f"wellbench.{name}", module_path
-        )
-        module = importlib.util.module_from_spec(spec)
-        sys.modules[f"wellbench.{name}"] = module
-        spec.loader.exec_module(module)
-
-    init = src / "__init__.py"
-    if init.exists():
-        spec = importlib.util.spec_from_file_location(
-            "wellbench", init, submodule_search_locations=[str(src)]
-        )
-        module = importlib.util.module_from_spec(spec)
-        sys.modules["wellbench"] = module
-        spec.loader.exec_module(module)
+    if (src / "wellbench" / "__init__.py").is_file():
+        sys.path.insert(0, str(src))
 
 
 _bootstrap_wellbench()

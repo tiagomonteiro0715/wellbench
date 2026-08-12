@@ -23,6 +23,7 @@ Benchmark: https://huggingface.co/datasets/monteirot/wellbench
 - [Install](#install)
 - [Quickstart](#quickstart)
 - [Command-line interface](#command-line-interface)
+- [Depth-matched wells (`main.py`)](#depth-matched-wells-mainpy)
 - [Regions](#regions)
 - [Output schema](#output-schema)
 - [Physics models](#physics-models)
@@ -46,14 +47,17 @@ Benchmark: https://huggingface.co/datasets/monteirot/wellbench
 
 | Component                       | Where                              | What it does                                                                       |
 |---------------------------------|------------------------------------|------------------------------------------------------------------------------------|
-| Physics generator               | `src/generator.py`                 | Deterministic forward model (Athy + Wyllie + Archie + Eaton).                      |
-| CTGAN generator                 | `src/ctgan_generator.py`           | Optional GAN baseline with the same `.generate()` API.                             |
-| Resampling generators           | `src/resample_generator.py`        | SMOTE and smoothed-bootstrap baselines with the same `.generate()` API.            |
-| Five region calibrations        | `src/regions.py`                   | `REGION_1` … `REGION_5` parameter dicts, plus `ALL_REGIONS` and `BENCHMARK_SEEDS`. |
-| Benchmark builder               | `src/benchmark.py`                 | `generate_benchmark(...)` → 15 CSVs (5 regions × 3 seeds).                         |
-| CLI                             | `src/cli.py`                       | `wellbench` console script wrapping the benchmark builder.                         |
-| CTGAN checkpoints               | `CTGAN_files/`, `src/ctgan_models/`| One pickled model + Optuna-best hyperparameters per region.                        |
+| Physics generator               | `src/wellbench/generator.py`        | Deterministic forward model (Athy + Wyllie + Archie + Eaton).                      |
+| CTGAN generator                 | `src/wellbench/ctgan_generator.py`  | Optional GAN baseline with the same `.generate()` API.                             |
+| Resampling generators           | `src/wellbench/resample_generator.py` | SMOTE and smoothed-bootstrap baselines with the same `.generate()` API.          |
+| Five region calibrations        | `src/wellbench/regions.py`          | `REGION_1` … `REGION_5` parameter dicts, plus `ALL_REGIONS` and `BENCHMARK_SEEDS`. |
+| Benchmark builder               | `src/wellbench/benchmark.py`        | `generate_benchmark(...)` → 15 CSVs (5 regions × 3 seeds).                         |
+| CLI                             | `src/wellbench/cli.py`              | `wellbench` console script wrapping the benchmark builder.                         |
+| CTGAN checkpoints               | `CTGAN_files/`, `src/wellbench/ctgan_models/`| One pickled model + Optuna-best hyperparameters per region.               |
+| CTGAN evaluation reports        | `CTGAN_files/metrics/r{1..5}/`      | Per-region fidelity, correlation, spatial, SDMetrics, DCR, and Optuna trial logs.   |
 | Physics calibration outputs     | `physical_model_files/`            | Optuna-tuned physics hyperparameters and softmax weights per region.               |
+| Real wells                      | `original_data/`                   | Nine cleaned real wells (regions 1–3) as `.xlsx`.                                  |
+| Depth-matched runner            | `main.py`                          | `synthetic/synth_<WELL>.xlsx` — one per real well, on that well's own depth axis.    |
 | Research code (Colab-converted) | `research_files/`                  | Original notebooks + local-runnable scripts for generation and ML evaluation.      |
 | Sphinx docs                     | `docs/`                            | Quickstart, regions reference, and autodoc API.                                    |
 | Examples                        | `examples.py`                      | One runnable function per public entry point.                                      |
@@ -69,6 +73,7 @@ From a clone of this repo:
 ```bash
 pip install -e .
 pip install -e ".[ctgan]"   # adds the GAN baseline (torch + ctgan)
+pip install -e ".[data]"    # adds openpyxl, needed by main.py to read original_data/
 pip install -e ".[docs]"    # to rebuild the Sphinx docs locally
 ```
 
@@ -131,6 +136,69 @@ paths = generate_benchmark(output_dir="benchmark")   # list of 15 CSV paths
 
 ---
 
+## Depth-matched wells (`main.py`)
+
+The `wellbench` CLI emits each region over its *nominal* `depth_range` — a
+basin-wide envelope (500–4500 ft for regions 1–3), not any particular borehole.
+[`main.py`](main.py) does the other thing: it reads every real well in
+[`original_data/`](original_data), works out which region calibration it belongs to,
+and generates a synthetic counterpart **on that well's own depth axis** — same
+interval, same sampling rate, same row count. The result lines up row-for-row with
+the real well, so it can be diffed or plotted against it directly.
+
+```bash
+pip install -e ".[data]"                          # openpyxl, for .xlsx read/write
+
+python main.py                                    # physics generator, seed 42
+python main.py --generator ctgan                  # CTGAN baseline (needs [ctgan] too)
+python main.py --generator smote --seeds 42 123   # resampling baseline, 2 seeds
+python main.py --wells PINDORI-1 MINWAL-2         # just these wells
+python main.py --help
+```
+
+All four generators are available via `--generator {physics,ctgan,smote,bootstrap}`.
+The two resampling baselines draw from the real well that is being matched, so they
+need no extra input.
+
+Output lands in `synthetic/` as `.xlsx`, mirroring the `real_<WELL>.xlsx` naming of
+`original_data/` so real and synthetic sit side by side:
+
+```
+synthetic/
+├── manifest.csv                  # provenance for every file below
+├── synth_JOYAMAIR-4.xlsx         # <- original_data/real_JOYAMAIR-4.xlsx
+├── synth_MINWAL-2.xlsx
+├── synth_MINWAL-X-1.xlsx
+├── synth_MISSA-KESWAL-01.xlsx
+├── synth_MISSA-KESWAL-02.xlsx
+├── synth_MISSA-KESWAL-03.xlsx
+├── synth_PINDORI-1.xlsx
+├── synth_PINDORI-2.xlsx
+└── synth_PINDORI-3.xlsx
+```
+
+The region number isn't in the filename — it's in `manifest.csv`, which records per
+file the source well and region, the generator and seed, the row count, and the
+realised depth min / max / median step, so a published folder carries its own
+provenance. Passing more than one `--seeds` value appends the seed
+(`synth_JOYAMAIR-4_seed_123.xlsx`) so the files don't collide.
+
+Two details worth knowing:
+
+- **Well → region mapping** lives in `WELL_REGIONS` in `main.py` and mirrors the
+  groupings the calibrations were fitted on (Missa Keswal → region 1, Pindori →
+  region 2, Joyamair / Minwal → region 3). Add an entry there for a new well.
+- **The depth axis is the *cleaned* one.** Each real well goes through
+  `clean_well_data` first, which drops rows where every log is `NaN`, so the depth
+  span reflects the interval actually logged. For `MINWAL-2` that trims the bottom
+  ~234 ft (9878 → 8360 rows); the other eight wells are unaffected.
+
+`original_data/` holds the nine Potwar Basin wells backing regions 1–3. Regions 4
+(Bering Sea) and 5 (Volve) are downloaded on demand by the research scripts and have
+no local file, so `main.py` does not emit wells for them.
+
+---
+
 ## Regions
 
 | #  | Region                                         | Location                                | Depth                  | Pore pressure |
@@ -159,7 +227,7 @@ Convenience constants: `ALL_REGIONS` (the five in order) and `BENCHMARK_SEEDS` (
 | `DT_NCT`   |                | ✅              | µs/ft, normal compaction trend |
 | `PPP`      |                | ✅              | psi, pore pressure (Eaton)     |
 
-Outputs are clipped to `wellbench.PHYSICAL_BOUNDS`, which downstream code can rely on:
+Physics and resampling outputs are clipped to `wellbench.PHYSICAL_BOUNDS`, which downstream code can rely on (the CTGAN generator uses the wider `CTGAN_BOUNDS` — see [CTGAN baseline](#ctgan-baseline)):
 
 ```python
 from wellbench import PHYSICAL_BOUNDS
@@ -180,13 +248,13 @@ for col, (lo, hi) in PHYSICAL_BOUNDS.items():
 | Gamma ray (`GR`) | Shale-volume linear mixing.                                       |
 | Pore pressure (`PPP`) | Eaton's method on a normal compaction trend (regions 1–3).   |
 
-The full source is in [`src/generator.py`](src/generator.py).
+The full source is in [`src/wellbench/generator.py`](src/wellbench/generator.py).
 
 ---
 
 ## CTGAN baseline
 
-Five pre-trained CTGAN models — one per region — ship under [`src/ctgan_models/`](src/ctgan_models) (also mirrored in [`CTGAN_files/`](CTGAN_files)) and load lazily so the base install does not need PyTorch. Sample with the same `.generate()` interface as the physics generator:
+Five pre-trained CTGAN models — one per region — ship under [`src/wellbench/ctgan_models/`](src/wellbench/ctgan_models) (also mirrored in [`CTGAN_files/`](CTGAN_files)) and load lazily so the base install does not need PyTorch. Sample with the same `.generate()` interface as the physics generator:
 
 ```python
 from wellbench import load_ctgan_generator
@@ -208,7 +276,35 @@ gen = CTGANSyntheticWellLogGenerator(
 df = gen.generate(seed=0, depth=my_depth_array)
 ```
 
-CTGAN samples are i.i.d. tabular rows; `wellbench` orders them along the depth axis you supply, renames columns to match the physics generator's schema, and clips to `PHYSICAL_BOUNDS`.
+CTGAN samples are i.i.d. tabular rows; `wellbench` orders them along the depth axis you supply, renames columns to match the physics generator's schema, and clips to `CTGAN_BOUNDS`.
+
+### Why CTGAN output uses its own bounds
+
+`CTGAN_BOUNDS` is deliberately wider than the physics generator's `PHYSICAL_BOUNDS`,
+and matches the envelope the checkpoints were trained and scored under (see
+`research_files/scripts/final_optimal_gan_based_generation.py`):
+
+| Column | `PHYSICAL_BOUNDS` | `CTGAN_BOUNDS`   |
+|--------|-------------------|------------------|
+| `GR`   | `[0, 200]`        | `[0, 350]`       |
+| `DT`   | `[30, 180]`       | `[30, 200]`      |
+| `RHOB` | `[1.2, 2.9]`      | `[1.0, 3.5]`     |
+| `HP`   | `[500, 15 000]`   | `[0, 20 000]`    |
+| `OB`   | `[2 000, 40 000]` | `[0, 50 000]`    |
+| `PPP`  | `[0, 30 000]`     | `[-2 000, 20 000]` |
+
+Clipping GAN samples with the tighter physics bounds visibly distorts the learned
+marginals. Region 4 (Bering Sea) is the clearest case: real `DT` there runs to
+~201 µs/ft, so a 180 µs/ft ceiling collapsed **over half of its samples onto the
+bound** as a spike. Sampling against the training envelope keeps the distribution
+continuous. If you need strictly physics-bounded rows, run the result through
+`clean_well_data`, which applies `PHYSICAL_BOUNDS` and `NaN`s out what falls outside:
+
+```python
+from wellbench import clean_well_data, load_ctgan_generator
+
+df = clean_well_data(load_ctgan_generator(region_index=4).generate(seed=42))
+```
 
 ---
 
@@ -282,7 +378,7 @@ my_region = {
 df = SyntheticWellLogGenerator(my_region).generate(seed=42)
 ```
 
-Required keys cover porosity (`phi0`, `compaction_c`, `phi_layer_amp`, …), Wyllie / Archie / RHOB / GR transforms, and — when `has_pore_pressure=True` — the hydrostatic, overburden, NCT, and Eaton parameters. See [`src/regions.py`](src/regions.py) for five fully-worked examples.
+Required keys cover porosity (`phi0`, `compaction_c`, `phi_layer_amp`, …), Wyllie / Archie / RHOB / GR transforms, and — when `has_pore_pressure=True` — the hydrostatic, overburden, NCT, and Eaton parameters. See [`src/wellbench/regions.py`](src/wellbench/regions.py) for five fully-worked examples.
 
 ---
 
@@ -321,8 +417,34 @@ The Optuna search results that the package ships with are stored at the reposito
 
 - [`physical_model_files/`](physical_model_files) — five `hp_optimised_r{N}.json` files (best physics hyperparameters per region) plus five `softmax_weights_r{N}.json` files (per-objective weighting used to fold JS-divergence and Wasserstein-1 into a single Optuna objective).
 - [`CTGAN_files/`](CTGAN_files) — five `ctgan_r{N}.pkl` model checkpoints and five `best_params_r{N}.json` files with the corresponding training hyperparameters.
+- [`CTGAN_files/metrics/r{N}/`](CTGAN_files/metrics) — the full evaluation report behind each checkpoint:
+
+  | File                            | Contents                                                                        |
+  |---------------------------------|---------------------------------------------------------------------------------|
+  | `summary_r{N}.md`               | Human-readable run card: wall time, best JSD, trial count, and all tables below. |
+  | `table3_r{N}.csv`               | Per-column JSD / Wasserstein means, σ and 95% CI across seeds *and* wells.       |
+  | `table3_paper_r{N}.csv`         | The same numbers pre-formatted as `mean ± σ` for publication.                    |
+  | `fidelity_r{N}.csv`             | Per-column JSD, WD, Kolmogorov–Smirnov and Anderson–Darling statistics.          |
+  | `baseline_real_vs_real_r{N}.csv`| Real-vs-real floor for the same metrics — the irreducible between-well spread.    |
+  | `correlation_r{N}.csv`          | Real vs synthetic Pearson correlation for every column pair, plus abs error.      |
+  | `spatial_r{N}.csv`              | Autocorrelation length and variogram sill, real vs synthetic.                     |
+  | `multivariate_r{N}.json`        | Sliced-Wasserstein, MMD (RBF, with permutation *p*), energy distance, Frobenius.  |
+  | `sdmetrics_r{N}.json`           | SDMetrics quality / diagnostic / DCR scores, with `_shapes_` and `_trends_` CSVs. |
+  | `dcr_breakdown_r{N}.json`       | Distance-to-closest-record vs a random-data baseline (privacy proxy).            |
+  | `trials_r{N}.csv`               | Every Optuna trial: params, objective value, duration, state.                     |
+  | `best_params_per_fold_r{N}.json`| Winning hyperparameters per leave-one-well-out fold.                             |
+  | `resource_usage_r{N}.csv`       | Wall clock, host RSS and GPU peak per phase (Optuna / bench / extended eval).     |
 
 Calibration uses **Jensen–Shannon divergence** and **Wasserstein-1** on each log column's marginal (synthetic vs. real). Optuna minimises a softmax-weighted sum of the two across `GR`, `DT`, `RHOB`, `log RT`, and (for pore-pressure regions) `PPP`.
+
+### Reading the CTGAN numbers
+
+The two fidelity tables answer different questions and disagree by design:
+
+- `fidelity_r{N}.csv` scores **one** synthetic draw against the **pooled** real data for the region (JSD ≈ 0.005–0.013 for region 1 — near-perfect marginals).
+- `table3_r{N}.csv` is the leave-one-well-out protocol: train on the other wells, score against the held-out one, over 4 seeds. Region 1 JSD lands at 0.17–0.44 there.
+
+The gap is generalisation to an unseen well, not a regression. `baseline_real_vs_real_r{N}.csv` is the reference for it: one real well scored against another gives JSD 0.17–0.46 for the same columns, so the held-out CTGAN numbers sit at roughly the between-well spread of the real data. Also note `spatial_r{N}.csv` — synthetic autocorrelation length is 1 sample against ~50 for real, the expected consequence of i.i.d. row sampling.
 
 ---
 
@@ -331,18 +453,22 @@ Calibration uses **Jensen–Shannon divergence** and **Wasserstein-1** on each l
 ```
 wellbench/
 ├── src/
-│   ├── __init__.py
-│   ├── benchmark.py              # generate_benchmark
-│   ├── cli.py                    # `wellbench` console script
-│   ├── ctgan_generator.py        # CTGANSyntheticWellLogGenerator, load_ctgan_generator
-│   ├── ctgan_models/             # bundled CTGAN checkpoints (ctgan_r1.pkl, ...)
-│   ├── generator.py              # SyntheticWellLogGenerator, PHYSICAL_BOUNDS, clean_well_data
-│   ├── regions.py                # REGION_1 … REGION_5, ALL_REGIONS, BENCHMARK_SEEDS
-│   └── resample_generator.py     # SMOTEGenerator, SmoothedBootstrapGenerator
+│   └── wellbench/
+│       ├── __init__.py
+│       ├── benchmark.py          # generate_benchmark
+│       ├── cli.py                # `wellbench` console script
+│       ├── ctgan_generator.py    # CTGANSyntheticWellLogGenerator, load_ctgan_generator
+│       ├── ctgan_models/         # bundled CTGAN checkpoints (ctgan_r1.pkl, ...)
+│       ├── generator.py          # SyntheticWellLogGenerator, PHYSICAL_BOUNDS, clean_well_data
+│       ├── regions.py            # REGION_1 … REGION_5, ALL_REGIONS, BENCHMARK_SEEDS
+│       └── resample_generator.py # SMOTEGenerator, SmoothedBootstrapGenerator
 ├── CTGAN_files/                  # CTGAN checkpoints + best Optuna params
+│   └── metrics/r{1..5}/          # per-region evaluation reports
 ├── physical_model_files/         # physics best params + softmax weights
+├── original_data/                # nine real wells (regions 1-3), .xlsx
 ├── docs/                         # Sphinx + autodoc + Napoleon
 ├── research_files/               # Colab-converted research codebase (uv-managed)
+├── main.py                       # depth-matched wells -> synthetic/synth_<WELL>.xlsx
 ├── examples.py                   # runnable tour of the public API
 ├── pyproject.toml
 ├── uv.lock
@@ -365,6 +491,7 @@ from wellbench import (
     # CTGAN generator (needs the [ctgan] extra at runtime)
     CTGANSyntheticWellLogGenerator,
     load_ctgan_generator,
+    CTGAN_BOUNDS,
 
     # Resampling generators (need a source DataFrame)
     SMOTEGenerator,

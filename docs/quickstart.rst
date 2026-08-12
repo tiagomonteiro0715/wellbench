@@ -72,6 +72,14 @@ Requires the ``[ctgan]`` extra (pulls in ``torch`` and ``ctgan``):
    gen = load_ctgan_generator(region_index=1)   # ctgan_r1.pkl
    df = gen.generate(seed=42)
 
+CTGAN output is clipped to :data:`wellbench.CTGAN_BOUNDS`, the envelope the
+checkpoints were trained under, rather than the narrower
+:data:`wellbench.PHYSICAL_BOUNDS` used by the physics generator. Clipping GAN
+samples to the physics bounds distorts the learned marginals — region 4 has real
+``DT`` up to ~201 µs/ft, so a 180 µs/ft ceiling would collapse over half its
+samples onto the bound. Pass the result through
+:func:`wellbench.clean_well_data` if you need strictly physics-bounded rows.
+
 Aligning to a real well
 -----------------------
 
@@ -86,3 +94,16 @@ A common recipe — emit one synthetic row per real measurement:
    synth = SyntheticWellLogGenerator(REGION_1).generate(
        seed=42, depth=real["DEPTH"].to_numpy(),
    )
+
+``main.py`` at the repository root does this for every real well in
+``original_data/`` at once, writing ``synthetic/synth_<WELL>.xlsx`` (mirroring
+``original_data/real_<WELL>.xlsx``) plus a provenance ``manifest.csv``::
+
+   pip install -e ".[data]"          # openpyxl, for .xlsx read/write
+
+   python main.py                    # physics generator, seed 42
+   python main.py --generator ctgan  # CTGAN baseline
+   python main.py --help
+
+Each output well carries the same depth interval, sampling rate, and row count
+as its real counterpart, so the two line up row-for-row.
